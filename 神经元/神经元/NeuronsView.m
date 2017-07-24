@@ -33,10 +33,8 @@
 @property(nonatomic,assign) CGFloat screenHeight;
 @property(nonatomic,assign) NSUInteger point;
 @property(nonatomic,strong) UIView *bgview;
-
 @property(nonatomic,strong)NSMutableArray *circleArray ;
-@property(nonatomic,strong)NSMutableArray *lineArray ;
-
+@property(nonatomic,assign)BOOL isFinished;
 @property(nonatomic,strong)NSTimer *timer;
 
 @end
@@ -45,12 +43,21 @@
 
 -(instancetype)initWithFrame:(CGRect)frame{
     if (self= [super initWithFrame:frame]) {
-
+        _isFinished = NO;
         [self setupUI];
         [self initPrama];
         [self draw];
 
-        _timer = [NSTimer scheduledTimerWithTimeInterval:0.0f target:self selector:@selector(runAction) userInfo:nil repeats:YES];
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+           _timer =  [NSTimer timerWithTimeInterval:0.02f target:self selector:@selector(runAction) userInfo:nil repeats:YES];
+            [[NSRunLoop currentRunLoop]addTimer:_timer forMode:NSRunLoopCommonModes];
+            while (!_isFinished) {
+                [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.001]];
+            }
+            NSLog(@"%@销毁了!!!",[NSThread currentThread]);
+        });
+        
+//        _timer = [NSTimer scheduledTimerWithTimeInterval:0.01f target:self selector:@selector(runAction) userInfo:nil repeats:YES];
     }
     return self;
 }
@@ -74,11 +81,8 @@
 //        [self.bgview removeFromSuperview];
 //        self.bgview  = nil;
 //        [self addSubview:self.bgview];
-    
-//   NSArray *arr = self.bgview.layer.superlayer.sublayers;
-//    for (CALayer *layer in arr) {
-//        [layer removeFromSuperlayer];
-//    }
+    NSLog(@"%@",[NSThread currentThread]);
+    self.bgview.layer.sublayers = @[];
     
     for (int i = 0; i < _point; i++) {
         Cirlemodel *model = self.circleArray[i];
@@ -90,7 +94,7 @@
             model.originX = _secreenWidth;
         }
         
-        if (model.originX > _screenHeight) {
+        if (model.originY > _screenHeight) {
             model.originY = 0;
         }else if (model.originY < 0){
             model.originY = _screenHeight;
@@ -205,12 +209,7 @@
     }
     return _circleArray;
 }
--(NSMutableArray *)lineArray{
-    if (!_lineArray) {
-        _lineArray = [NSMutableArray arrayWithCapacity:_point];
-    }
-    return _lineArray;
-}
+
 /*
 // Only override drawRect: if you perform custom drawing.
 // An empty implementation adversely affects performance during animation.
